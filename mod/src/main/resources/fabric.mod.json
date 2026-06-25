@@ -1,0 +1,24 @@
+{
+	"schemaVersion": 1,
+	"id": "zenauth",
+	"version": "${version}",
+	"name": "ZenAuth",
+	"description": "Skips the client-side Mojang session check so ZenCraft (cracked) accounts can connect. Pairs with zenclient which does the real auth.",
+	"authors": [],
+	"license": "MIT",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"net.zenauth.ZenAuthClient"
+		]
+	},
+	"mixins": [
+		"zenauth.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.16.14",
+		"minecraft": "~1.21.8",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}

@@ -1,0 +1,10 @@
+# local state / secrets
+zencli/profile.json
+zencli/register_state.json
+zencli/ZenHttp.class
+**/__pycache__/
+*.pyc
+
+# mod build output (prebuilt jar is committed as mod/zenauth-1.0.0.jar)
+mod/build/
+mod/.gradle/
