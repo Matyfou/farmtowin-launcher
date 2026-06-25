@@ -65,37 +65,43 @@ rm ~/.config/farmtowin/account
 
 ## Launch from Prism Launcher
 
-Prefer Prism? A wrapper script feeds the ZenCraft session into Prism's launch
-command, so you get the normal Prism instance UI plus our auth.
+Prism runs Minecraft through its own launcher entry point and feeds the account
+over stdin, so a wrapper can't rewrite `--accessToken`. Instead, a **pre-launch**
+step logs in and writes the fresh ZenCraft token to a file, and the `zenauth` mod
+reads it in-game (ignoring Prism's offline placeholder token).
 
 1. **Create the instance** — New Instance → Minecraft **1.21.8** → Mod loader
-   **Fabric 0.16.14**.
-2. **Add the mods** — in the instance, add **Fabric API** (Prism's mod browser
-   or Modrinth), then **Add file** → `mod/zenauth-1.0.0.jar` from this repo.
-3. **Account** — add any **Offline** account in Prism (the name is overridden at
-   launch; it only needs to exist so Prism will start the game).
+   **Fabric** (0.16.14 or newer).
+2. **Add the mods** — in the instance, add **Fabric API** (Prism's mod browser or
+   Modrinth), then **Add file** → `mod/zenauth-1.0.0.jar` from this repo.
+3. **Account** — add an **Offline** account named **exactly your ZenCraft
+   username** (that name is what the server sees).
 4. **Save your ZenCraft credentials once**:
    ```
    ./farmtowin.sh setup
    ```
-5. **Set the wrapper** — Instance → **Edit** → **Settings** → **Custom commands**
-   → tick *Custom commands* → **Wrapper command**:
+5. **Set the pre-launch command** — Instance → **Edit** → **Settings** →
+   **Custom commands** → tick *Custom commands* → **Pre-launch command**:
    ```
-   /absolute/path/to/farmtowin-launcher/prism-wrapper.sh
+   /absolute/path/to/farmtowin-launcher/prism-prelaunch.sh
    ```
-6. **Play** — launch the instance from Prism. It logs in fresh and auto-joins
-   `play.zencraft.net`.
+   (Leave *Wrapper command* empty.)
+6. **Play** — launch the instance from Prism. The pre-launch logs you in, the mod
+   authenticates, and you connect to `play.zencraft.net`.
 
 Notes:
-- Still needs system `python3` + a JDK 21 on `PATH` (the wrapper does the login).
-- Disable auto-join with an env var on the instance: `FARMTOWIN_AUTOJOIN=` (empty).
+- Needs system `python3` + a JDK 21 on `PATH` (the pre-launch does the login).
+- The token is written to `~/.config/farmtowin/session` (chmod 600) and refreshed
+  on every launch.
 - The mod needs no special game directory, so a standard Prism instance is fine.
+- Prism doesn't auto-join from the menu; open the server from the multiplayer
+  list (or add it). The standalone `./farmtowin.sh` auto-joins.
 
 ## Layout
 
 ```
 farmtowin.sh                     entry point (setup + launch)
-prism-wrapper.sh                 Prism Launcher wrapper command
+prism-prelaunch.sh               Prism Launcher pre-launch command
 zencli/
   zencli.py                      ZenCraft login / token builder
   hwid.py                        synthetic hardware id (see "Account" below)

@@ -4,6 +4,8 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Base64;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -57,7 +59,7 @@ public class ZenAuthClient implements ClientModInitializer {
 		// exactly like zenclient does on its "Rejoindre ZenCraft" button. Doing it
 		// at game init (seconds earlier) lets the server-side authorization expire.
 		ClientLoginConnectionEvents.INIT.register((handler, client) -> {
-			String token = client.getSession().getAccessToken();
+			String token = resolveToken(client.getSession().getAccessToken());
 			if (isBase64(token)) {
 				try {
 					handshake(token);
@@ -65,20 +67,41 @@ public class ZenAuthClient implements ClientModInitializer {
 				} catch (Exception e) {
 					LOG.error("ZenCraft handshake failed", e);
 				}
+			} else {
+				LOG.warn("no usable ZenCraft token (accessToken + session file both invalid)");
 			}
 		});
 
 		ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
-			String remote = handler.getConnection().getAddress().toString();
-			LOG.info("JOIN fired, remote={}", remote);
-			String t = client.getSession().getAccessToken();
+			String t = resolveToken(client.getSession().getAccessToken());
 			if (isBase64(t)) {
 				ClientPlayNetworking.send(new AuthPayload(t));
 				LOG.info("Sent zencraft:auth payload");
 			} else {
-				LOG.warn("accessToken not base64, not sending");
+				LOG.warn("no usable ZenCraft token, not sending payload");
 			}
 		});
+	}
+
+	// Token source: the launch --accessToken (standalone farmtowin.sh puts the
+	// real base64 token there), or, when that's a launcher placeholder like "0"
+	// (Prism offline account), a session file written by the pre-launch step.
+	private static String resolveToken(String sessionToken) {
+		if (isBase64(sessionToken)) {
+			return sessionToken;
+		}
+		try {
+			Path f = Path.of(System.getProperty("user.home"), ".config/farmtowin/session");
+			if (Files.exists(f)) {
+				String t = Files.readString(f).trim();
+				if (isBase64(t)) {
+					return t;
+				}
+			}
+		} catch (Exception e) {
+			LOG.error("failed reading session file", e);
+		}
+		return sessionToken;
 	}
 
 	// ZenCore.v(): init -> key, then account {key, f, token} with the
