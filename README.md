@@ -105,21 +105,22 @@ cd mod && ./gradlew build
 cp build/libs/zenauth-1.0.0.jar ./zenauth-1.0.0.jar
 ```
 
-## Account
+## Account & hardware id
 
-The launcher authenticates with a **synthetic hardware id** kept in
-`zencli/hwid.py` (`SPOOFED_HWID`) — your real hardware is never read. The catch:
-the server binds each account to the hardware id it was **created** with, and the
-in-game token must match it.
+Just use any ZenCraft account — log in on first run and you're set.
 
-This repo ships the hardware id the bundled account was registered with, so it
-works out of the box for that account. To use a different account, it has to be
-registered against the same `SPOOFED_HWID` value. ZenCraft only allows
-registration through the official launcher, which reads the real machine id;
-the account here was created by running that launcher with `aq.class` patched to
-return `SPOOFED_HWID` instead (so the server sees a brand-new machine), then
-keeping the same id on the CLI side. That patching step is out of scope for this
-repo and is not required for normal play.
+The launcher sends a **synthetic hardware id** instead of scanning your real
+machine (privacy). It's generated randomly the first time you log in and saved
+in `zencli/profile.json` (kept out of git), so each install has its own stable
+id — nothing is hardcoded or shared. See `zencli/hwid.py`.
+
+It does **not** need to match the machine the account was created on: the id is
+only required to be internally consistent within a session, which is why the
+same account works across different PCs. The actual login is your e-mail and
+password.
+
+Creating a ZenCraft account is done through the official launcher (this project
+only handles playing). Account creation isn't covered here.
 
 ## Troubleshooting
 
@@ -127,8 +128,8 @@ repo and is not required for normal play.
 | --- | --- |
 | `Java 21 not found` | install JDK 21 or set `ZEN_JAVA=/path/to/java21` |
 | `javac not found` | install the full JDK (not just a JRE) |
-| `Login failed` | wrong credentials, or the account wasn't created with the matching hardware id (see *Account*) |
-| `Session invalide…` in game | the account/hardware-id pairing is off — see *Account* |
+| `Login failed` | wrong e-mail/password |
+| `Session invalide…` in game | delete `zencli/profile.json` to regenerate the session, then relaunch |
 | `401` errors in the log (profile key, Realms JWT…) | **normal** for a cracked account, harmless |
 
 ## Disclaimer

@@ -7,7 +7,6 @@ The seed is persisted per profile so the HWID stays stable across logins.
 """
 
 import hashlib
-import os
 import secrets
 
 
@@ -29,27 +28,23 @@ def _serial(seed: str, label: str, length: int = 12) -> str:
     return "".join(alphabet[b % len(alphabet)] for b in digest[:length])
 
 
-# Fixed synthetic identity that the patched launcher (spoofed aq.class) used to
-# register the account. The game-auth fingerprint is derived server-side from
-# this exact set, so login MUST submit it verbatim or the join is rejected with
-# "session invalide de zencraft". Keep in sync with spoof/aq.java.
-SPOOFED_HWID = [
-    "6a16224b75006d0d4fa52745dfd1d37f95afa92c103999f433aaf8b254ca7a44",
-    "computer-serial-number:Q1MQHQXY8N6D",
-    "baseboard-serial-number:H3K0CP71TBKH",
-    "disk-serial-number:22OMZE99PHFY96TF",
-    "memory-serial-number:ZHWJPM3FYR9U",
-]
-
-
 def build_hwid(seed: str) -> list[str]:
-    """Return the fixed spoofed HWID set bound to the account.
+    """Build the synthetic HWID set (ordered, like the original LinkedHashSet).
 
-    The account was created through the patched launcher using SPOOFED_HWID, so
-    every login must reuse it (the seed is ignored on purpose). Order matches
-    aq.java: hardware-uuid hash, computer/baseboard/disk/memory serials.
+    Fully derived from `seed`: a different seed gives a different, stable
+    identity. The seed is random per install and persisted (see zencli.py), so
+    every user/account gets its own synthetic HWID and NOTHING is hardcoded in
+    the repo. The set is internally consistent, which is all the server needs -
+    it is not required to match the machine the account was registered on.
+    Order matches aq.java: hardware-uuid hash, computer/baseboard/disk/memory.
     """
-    return list(SPOOFED_HWID)
+    return [
+        _derive(seed, "hardware-uuid", 64),  # 64-hex, no prefix
+        f"computer-serial-number:{_serial(seed, 'computer')}",
+        f"baseboard-serial-number:{_serial(seed, 'baseboard')}",
+        f"disk-serial-number:{_serial(seed, 'disk', 16)}",
+        f"memory-serial-number:{_serial(seed, 'memory')}",
+    ]
 
 
 if __name__ == "__main__":
