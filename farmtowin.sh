@@ -44,20 +44,24 @@ command -v javac >/dev/null || die "javac (JDK) not found - needed for the TLS h
 command -v python3 >/dev/null || die "python3 not found."
 
 # 1. credentials -------------------------------------------------------------
-if [ ! -f "$CREDS" ]; then
-	say "First-time setup - log in to your ZenCraft account (saved locally, once)."
+# `./farmtowin.sh setup` only stores credentials (handy before using the Prism
+# wrapper, which can't prompt). Normal runs prompt once then launch.
+MODE="${1:-play}"
+if [ "$MODE" = "setup" ] || [ ! -f "$CREDS" ]; then
+	say "Log in to your ZenCraft account (saved locally, once)."
 	read -rp "  email   : " EMAIL
 	read -rsp "  password: " PASSWORD; echo
 	[ -n "$EMAIL" ] && [ -n "$PASSWORD" ] || die "email/password required."
 	say "Verifying login..."
 	if ! login_fresh; then
-		die "Login failed - wrong credentials, or the account/HWID does not match. Nothing saved."
+		die "Login failed - wrong e-mail/password. Nothing saved."
 	fi
 	mkdir -p "$CONFIG_DIR"
 	umask 077
 	printf 'EMAIL=%q\nPASSWORD=%q\n' "$EMAIL" "$PASSWORD" > "$CREDS"
 	chmod 600 "$CREDS"
 	say "Credentials saved to $CREDS"
+	[ "$MODE" = "setup" ] && { say "Setup done. You can now launch from Prism, or run ./farmtowin.sh"; exit 0; }
 fi
 # shellcheck disable=SC1090
 source "$CREDS"

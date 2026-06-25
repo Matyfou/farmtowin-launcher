@@ -63,10 +63,39 @@ To change account, delete the saved credentials:
 rm ~/.config/farmtowin/account
 ```
 
+## Launch from Prism Launcher
+
+Prefer Prism? A wrapper script feeds the ZenCraft session into Prism's launch
+command, so you get the normal Prism instance UI plus our auth.
+
+1. **Create the instance** — New Instance → Minecraft **1.21.8** → Mod loader
+   **Fabric 0.16.14**.
+2. **Add the mods** — in the instance, add **Fabric API** (Prism's mod browser
+   or Modrinth), then **Add file** → `mod/zenauth-1.0.0.jar` from this repo.
+3. **Account** — add any **Offline** account in Prism (the name is overridden at
+   launch; it only needs to exist so Prism will start the game).
+4. **Save your ZenCraft credentials once**:
+   ```
+   ./farmtowin.sh setup
+   ```
+5. **Set the wrapper** — Instance → **Edit** → **Settings** → **Custom commands**
+   → tick *Custom commands* → **Wrapper command**:
+   ```
+   /absolute/path/to/farmtowin-launcher/prism-wrapper.sh
+   ```
+6. **Play** — launch the instance from Prism. It logs in fresh and auto-joins
+   `play.zencraft.net`.
+
+Notes:
+- Still needs system `python3` + a JDK 21 on `PATH` (the wrapper does the login).
+- Disable auto-join with an env var on the instance: `FARMTOWIN_AUTOJOIN=` (empty).
+- The mod needs no special game directory, so a standard Prism instance is fine.
+
 ## Layout
 
 ```
 farmtowin.sh                     entry point (setup + launch)
+prism-wrapper.sh                 Prism Launcher wrapper command
 zencli/
   zencli.py                      ZenCraft login / token builder
   hwid.py                        synthetic hardware id (see "Account" below)
